@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { RequirementForm as FormData, RequirementItem } from "@/types/requirement";
-import { ChefHat, Send, Loader2 } from "lucide-react";
+import { generateRequirementPDF } from "@/utils/generatePDF";
+import { ChefHat, Send, Loader2, FileDown } from "lucide-react";
 
 // Replace with your Google Apps Script Web App URL
 const SCRIPT_URL = "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL";
@@ -114,7 +115,7 @@ const Index = () => {
     };
 
     try {
-      const response = await fetch(SCRIPT_URL, {
+      await fetch(SCRIPT_URL, {
         method: "POST",
         mode: "no-cors",
         headers: {
@@ -145,6 +146,16 @@ const Index = () => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleDownloadPDF = () => {
+    if (!validateForm()) return;
+    
+    generateRequirementPDF(formData, items);
+    toast({
+      title: "PDF Generated",
+      description: "Your requirement PDF has been downloaded.",
+    });
   };
 
   return (
@@ -202,8 +213,17 @@ const Index = () => {
             </CardContent>
           </Card>
 
-          {/* Submit Button */}
-          <div className="flex justify-end animate-fade-in" style={{ animationDelay: "200ms" }}>
+          {/* Action Buttons */}
+          <div className="flex flex-wrap justify-end gap-3 animate-fade-in" style={{ animationDelay: "200ms" }}>
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={handleDownloadPDF}
+              className="gap-2"
+            >
+              <FileDown className="h-5 w-5" />
+              Download PDF
+            </Button>
             <Button
               size="lg"
               onClick={handleSubmit}
