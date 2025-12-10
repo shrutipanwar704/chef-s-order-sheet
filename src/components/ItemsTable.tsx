@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { RequirementItem } from "@/types/requirement";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +18,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Plus, Trash2 } from "lucide-react";
+import { KITCHEN_ITEMS, UNITS } from "@/data/kitchenItems";
 
 interface ItemsTableProps {
   items: RequirementItem[];
@@ -25,14 +27,26 @@ interface ItemsTableProps {
   onUpdateItem: (id: string, field: keyof RequirementItem, value: string | number) => void;
 }
 
-const UNITS = ["kg", "g", "ltr", "ml", "pcs", "dozen", "packet", "box", "can", "bottle"];
+const ADD_NEW_ITEM = "__ADD_NEW_ITEM__";
 
 export function ItemsTable({ items, onAddItem, onRemoveItem, onUpdateItem }: ItemsTableProps) {
+  const [customItemMode, setCustomItemMode] = useState<Record<string, boolean>>({});
+
   const calculateTotal = (qty: number, price: number) => {
     return (qty * price).toFixed(2);
   };
 
   const grandTotal = items.reduce((sum, item) => sum + item.qty * item.price, 0);
+
+  const handleItemSelect = (id: string, value: string) => {
+    if (value === ADD_NEW_ITEM) {
+      setCustomItemMode((prev) => ({ ...prev, [id]: true }));
+      onUpdateItem(id, "item", "");
+    } else {
+      setCustomItemMode((prev) => ({ ...prev, [id]: false }));
+      onUpdateItem(id, "item", value);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -40,7 +54,7 @@ export function ItemsTable({ items, onAddItem, onRemoveItem, onUpdateItem }: Ite
         <Table>
           <TableHeader>
             <TableRow className="bg-primary/5 hover:bg-primary/5">
-              <TableHead className="font-semibold text-foreground">Item</TableHead>
+              <TableHead className="font-semibold text-foreground min-w-[200px]">Item</TableHead>
               <TableHead className="font-semibold text-foreground w-24">Qty</TableHead>
               <TableHead className="font-semibold text-foreground w-32">Unit</TableHead>
               <TableHead className="font-semibold text-foreground w-28">Price</TableHead>
@@ -56,12 +70,44 @@ export function ItemsTable({ items, onAddItem, onRemoveItem, onUpdateItem }: Ite
                 style={{ animationDelay: `${index * 50}ms` }}
               >
                 <TableCell>
-                  <Input
-                    placeholder="Enter item name"
-                    value={item.item}
-                    onChange={(e) => onUpdateItem(item.id, "item", e.target.value)}
-                    className="bg-background border-border"
-                  />
+                  {customItemMode[item.id] ? (
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Enter custom item name"
+                        value={item.item}
+                        onChange={(e) => onUpdateItem(item.id, "item", e.target.value)}
+                        className="bg-background border-border flex-1"
+                        autoFocus
+                      />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setCustomItemMode((prev) => ({ ...prev, [item.id]: false }))}
+                        className="text-xs"
+                      >
+                        List
+                      </Button>
+                    </div>
+                  ) : (
+                    <Select
+                      value={item.item || undefined}
+                      onValueChange={(value) => handleItemSelect(item.id, value)}
+                    >
+                      <SelectTrigger className="bg-background border-border">
+                        <SelectValue placeholder="Select item" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-[300px]">
+                        <SelectItem value={ADD_NEW_ITEM} className="text-primary font-medium">
+                          + Add New Item
+                        </SelectItem>
+                        {KITCHEN_ITEMS.map((kitchenItem) => (
+                          <SelectItem key={kitchenItem} value={kitchenItem}>
+                            {kitchenItem}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                 </TableCell>
                 <TableCell>
                   <Input
